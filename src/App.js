@@ -6,7 +6,7 @@ import Home from "./components/home/Home";
 import Loading from "./components/common/Loading";
 import Login from "./components/login/Login";
 import Profile from "./components/profile/Profile";
-import Jobs from "./components/jobs/Job";
+import Jobs from "./components/jobs/Jobs";
 import MyNetwork from "./components/my-network/MyNetwork";
 import Notification from "./components/notifications/Notification";
 import Chat from "./components/chat/Chat";
