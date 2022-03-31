@@ -168,7 +168,7 @@ const SignUp = ({ toggleModal }) => {
               onClick={() => filepickerRef.current.click()}
               className="signup__upload-container"
             >
-              Choose File
+              Upload Avatar
             </div>
           )}
           <input
