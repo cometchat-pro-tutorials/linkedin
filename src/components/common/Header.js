@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useState, useEffect, useCallback } from "react";
 import { useHistory } from "react-router-dom";
 
 import withModal from "../common/Modal";
@@ -7,9 +7,58 @@ import Search from "../search/Search";
 import Context from "../../context";
 
 const Header = ({ toggleModal }) => {
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+
   const { user, setUser, cometChat } = useContext(Context);
 
   const history = useHistory();
+
+  const addMessageListener = useCallback(() => {
+    if (!user || !cometChat) return;
+    cometChat.addMessageListener(
+      user.id,
+      new cometChat.MessageListener({
+        onTextMessageReceived: (textMessage) => {
+          setUnreadMessageCount((prevCount) => prevCount + 1);
+        },
+        onMediaMessageReceived: (mediaMessage) => {
+          setUnreadMessageCount((prevCount) => prevCount + 1);
+        },
+        onCustomMessageReceived: (customMessage) => {
+          setUnreadMessageCount((prevCount) => prevCount + 1);
+        },
+      })
+    );
+  }, [user, cometChat]);
+
+  const transformUnreadMessageCount = useCallback((unreadMessageCount) => {
+    const keys = Object.keys(unreadMessageCount);
+    let totalUnreadMessageCount = 0;
+    for (const key of keys) {
+      totalUnreadMessageCount =
+        totalUnreadMessageCount + unreadMessageCount[key];
+    }
+    return totalUnreadMessageCount;
+  }, []);
+
+  const getUnreadMessageCount = useCallback(async () => {
+    if (!user || !cometChat) return;
+    const unreadMessageCount =
+      await cometChat.getUnreadMessageCountForAllUsers();
+    setUnreadMessageCount(transformUnreadMessageCount(unreadMessageCount));
+  }, [user, cometChat, transformUnreadMessageCount]);
+
+  useEffect(() => {
+    if (user && cometChat) {
+      addMessageListener();
+      getUnreadMessageCount();
+    }
+    return () => {
+      if (user && cometChat) {
+        cometChat.removeMessageListener(user.id);
+      }
+    };
+  }, [user, cometChat, addMessageListener, getUnreadMessageCount]);
 
   const showSearchModal = () => {
     toggleModal(true);
@@ -29,7 +78,7 @@ const Header = ({ toggleModal }) => {
     localStorage.removeItem("auth");
   };
 
-  const go = (route) => () => {
+  const go = (route) => async () => {
     history.push(route);
   };
 
@@ -82,6 +131,13 @@ const Header = ({ toggleModal }) => {
             </div>
             <div className="menu__item" onClick={go("/chat")}>
               <span>Messaging</span>
+              {unreadMessageCount ? (
+                <span className="menu__unread-message-count">
+                  {unreadMessageCount}
+                </span>
+              ) : (
+                <></>
+              )}
             </div>
             <div className="menu__item" onClick={go("/notifications")}>
               <span>Notifications</span>

@@ -54,7 +54,7 @@ class CometChatMessageList extends React.PureComponent {
 		this.state = {
 			onItemClick: null,
 			loggedInUser: null,
-			decoratorMessage: Translator.translate("LOADING", context.language),
+			decoratorMessage: "LOADING",
 		};
 
 		this.messagesEnd = React.createRef();	
@@ -94,7 +94,7 @@ class CometChatMessageList extends React.PureComponent {
 		const ifChatWindowChanged = () => {
 			let output = false;
 
-			if (this.context.type === CometChat.ACTION_TYPE.TYPE_USER && this.context.item.uid !== this.item.uid) {
+			if (this.context.type === CometChat.ACTION_TYPE.TYPE_USER && (this.context.item.uid !== this.item.uid || this.context.item.blockedByMe !== this.item.blockedByMe)) {
 				output = true;
 			} else if (this.context.type === CometChat.ACTION_TYPE.TYPE_GROUP && this.context.item.guid !== this.item.guid) {
 				output = true;
@@ -106,7 +106,7 @@ class CometChatMessageList extends React.PureComponent {
 
 		if (ifChatWindowChanged() === true) {
 			this.messageCount = 0;
-			this.setState({ decoratorMessage: Translator.translate("LOADING", this.context.language) });
+			this.setState({ decoratorMessage: "LOADING" });
 
 			this.MessageListManager?.removeListeners();
 
@@ -155,7 +155,7 @@ class CometChatMessageList extends React.PureComponent {
 		this.fetchMessages()
 			.then(messageList => {
 				if (messageList.length === 0) {
-					this.setState({ decoratorMessage: Translator.translate("NO_MESSAGES_FOUND", this.context.language) });
+					this.setState({ decoratorMessage: "NO_MESSAGES_FOUND" });
 				} else {
 					this.setState({ decoratorMessage: "" });
 				}
@@ -171,7 +171,7 @@ class CometChatMessageList extends React.PureComponent {
 
 						//mark the message as read
 						if (message.hasOwnProperty("readAt") === false) {
-							CometChat.markAsRead(message);
+							CometChat.markAsRead(message).catch(error => {});
 							this.props.actionGenerated(enums.ACTIONS["MESSAGE_READ"], message);
 						}
 					}
@@ -186,7 +186,7 @@ class CometChatMessageList extends React.PureComponent {
 			})
 			.catch(error => {
 				if (this.props.messages.length === 0) {
-					this.setState({ decoratorMessage: Translator.translate("SOMETHING_WRONG", this.context.language) });
+					this.setState({ decoratorMessage: "SOMETHING_WRONG" });
 				}
 
 				if (error && error.hasOwnProperty("code") && error.code === "ERR_GUID_NOT_FOUND") {
@@ -324,7 +324,7 @@ class CometChatMessageList extends React.PureComponent {
 		}
 
 		this.props.actionGenerated(enums.ACTIONS["REFRESHING_MESSAGES"], []);
-		this.setState({ decoratorMessage: Translator.translate("LOADING", this.context.language) });
+		this.setState({ decoratorMessage: "LOADING" });
 		this.MessageListManager.removeListeners();
 
 		if (this.props.parentMessageId) {
@@ -343,13 +343,13 @@ class CometChatMessageList extends React.PureComponent {
 	markMessageAsDelivered = message => {
 
 		if (message.sender?.uid !== this.state.loggedInUser?.uid && message.hasOwnProperty("deliveredAt") === false) {
-			CometChat.markAsDelivered(message);
+			CometChat.markAsDelivered(message).catch(error => {});
 		}
 	};
 
 	markMessageAsRead = (message, type) => {
 		if (message.hasOwnProperty("readAt") === false) {
-			CometChat.markAsRead(message);
+			CometChat.markAsRead(message).catch(error => {});
 		}
 	};
 
@@ -379,9 +379,8 @@ class CometChatMessageList extends React.PureComponent {
 		//handling dom lag - increment count only for main message list
 		if (message.hasOwnProperty("parentMessageId") === false && this.props.hasOwnProperty("parentMessageId") === false) {
 			++this.messageCount;
-
 			//if the user has not scrolled in chat window(scroll is at the bottom of the chat window)
-			if (this.messagesEnd.scrollHeight - this.messagesEnd.scrollTop - this.messagesEnd.clientHeight < 20) {
+			if (this.messagesEnd.scrollHeight - this.messagesEnd.scrollTop - this.messagesEnd.clientHeight <= 1) {
 				if (this.messageCount > enums.CONSTANTS["MAX_MESSAGE_COUNT"]) {
 					this.reInitializeMessageBuilder();
 				} else {
@@ -440,7 +439,7 @@ class CometChatMessageList extends React.PureComponent {
 			++this.messageCount;
 
 			//if the user has not scrolled in chat window(scroll is at the bottom of the chat window)
-			if (this.messagesEnd.scrollHeight - this.messagesEnd.scrollTop === this.messagesEnd.clientHeight) {
+			if (this.messagesEnd.scrollHeight - this.messagesEnd.scrollTop - this.messagesEnd.clientHeight <= 1) {
 				if (this.messageCount > enums.CONSTANTS["MAX_MESSAGE_COUNT"]) {
 					this.reInitializeMessageBuilder();
 				} else {
@@ -672,7 +671,7 @@ class CometChatMessageList extends React.PureComponent {
 			messageContainer = (
 				<div css={decoratorMessageStyle()} className="messages__decorator-message">
 					<p css={decoratorMessageTxtStyle(this.context)} className="decorator-message">
-						{this.state.decoratorMessage}
+						{Translator.translate(this.state.decoratorMessage, this.props.lang)}
 					</p>
 				</div>
 			);

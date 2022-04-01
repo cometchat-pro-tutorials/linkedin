@@ -13,7 +13,6 @@ import { theme } from "../resources/theme";
 export const CometChatContext = React.createContext({});
 
 export class CometChatContextProvider extends React.Component {
-	
 	loggedInUser;
 
 	constructor(props) {
@@ -71,15 +70,15 @@ export class CometChatContextProvider extends React.Component {
 			checkIfCallIsOngoing: this.checkIfCallIsOngoing,
 			getActiveCallSessionID: this.getActiveCallSessionID,
 			hasKeyValue: this.hasKeyValue,
+			setRoles: this.setRoles,
 		};
 
 		this.toastRef = React.createRef();
 	}
 
 	componentDidMount() {
-
 		this.getLoggedinUser();
-		
+
 		if (this.props.user.trim().length) {
 			this.getUser(this.props.user.trim())
 				.then(user => {
@@ -107,12 +106,14 @@ export class CometChatContextProvider extends React.Component {
 	}
 
 	componentDidUpdate(prevProps) {
+
 		if (this.props.user.trim().length && prevProps.user !== this.props.user) {
 			this.getUser(this.props.user)
 				.then(user => {
-					this.setType(CometChat.ACTION_TYPE.TYPE_USER);
-					this.setItem(user);
-					this.setClearedUnreadMessages(false);
+					//this.setType(CometChat.ACTION_TYPE.TYPE_USER);
+					//this.setItem(user);
+					this.setTypeAndItem(CometChat.ACTION_TYPE.TYPE_USER, user);
+					//this.setClearedUnreadMessages(false);
 				})
 				.catch(error => {
 					const errorCode = error && error.hasOwnProperty("code") ? error.code : "uid not available";
@@ -121,9 +122,10 @@ export class CometChatContextProvider extends React.Component {
 		} else if (this.props.group.trim().length && prevProps.group !== this.props.group) {
 			this.getGroup(this.props.group)
 				.then(group => {
-					this.setType(CometChat.ACTION_TYPE.TYPE_GROUP);
-					this.setItem(group);
-					this.setClearedUnreadMessages(false);
+					//this.setType(CometChat.ACTION_TYPE.TYPE_GROUP);
+					//this.setItem(group);
+					this.setTypeAndItem(CometChat.ACTION_TYPE.TYPE_GROUP, group);
+					//this.setClearedUnreadMessages(false);
 				})
 				.catch(error => {
 					const errorCode = error && error.hasOwnProperty("code") ? error.code : "guid not available";
@@ -133,8 +135,9 @@ export class CometChatContextProvider extends React.Component {
 
 		//when the active group is deleted, close the chat window.
 		if (this.state.type === CometChat.ACTION_TYPE.TYPE_GROUP && this.state.item.guid === this.state.deletedGroupId) {
-			this.setItem({});
-			this.setType("");
+			//this.setItem({});
+			//this.setType("");
+			this.setTypeAndItem({}, "");
 			this.setDeletedGroupId("");
 		}
 
@@ -143,11 +146,21 @@ export class CometChatContextProvider extends React.Component {
 			this.setTypeAndItem({}, "");
 			this.setLeftGroupId("");
 		}
-		
+
 		if (prevProps.language !== this.props.language) {
 			this.setState({ language: this.props.language });
+			this.setRoles();
 		}
 	}
+
+	setRoles = () => {
+		const roles = {
+			[CometChat.GROUP_MEMBER_SCOPE.ADMIN]: Translator.translate("ADMINISTRATOR", this.props.language),
+			[CometChat.GROUP_MEMBER_SCOPE.MODERATOR]: Translator.translate("MODERATOR", this.props.language),
+			[CometChat.GROUP_MEMBER_SCOPE.PARTICIPANT]: Translator.translate("PARTICIPANT", this.props.language),
+		};
+		this.setState({ roles: roles });
+	};
 
 	getUser = uid => {
 		const promise = new Promise((resolve, reject) => {
@@ -222,23 +235,21 @@ export class CometChatContextProvider extends React.Component {
 		let timer = 0;
 
 		return new Promise((resolve, reject) => {
-
 			if (timerCounter === timer) {
 				return reject(`timer reached ${timerCounter}`);
-			};
+			}
 
 			if (this.loggedInUser) {
 				return resolve(this.loggedInUser);
-			};
+			}
 
 			if (!CometChat.isInitialized()) {
 				return reject("CometChat not initialized");
-			};
+			}
 
 			this.isUserLoggedIn = setInterval(() => {
 				CometChat.getLoggedinUser()
 					.then(user => {
-
 						this.loggedInUser = user;
 						clearInterval(this.isUserLoggedIn);
 						return resolve(user);
@@ -336,7 +347,7 @@ export class CometChatContextProvider extends React.Component {
 	setLastMessage = message => {
 		this.setState({ lastMessage: message });
 	};
-	
+
 	setClearedUnreadMessages = flag => {
 		this.setState({ clearedUnreadMessages: flag });
 	};
@@ -387,6 +398,7 @@ export class CometChatContextProvider extends React.Component {
 	};
 
 	render() {
+		
 		return (
 			<CometChatContext.Provider value={this.state}>
 				<CometChatToastNotification ref={el => (this.toastRef = el)} lang={this.props.language} position={this.props.toastNotificationPos} />

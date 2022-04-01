@@ -414,8 +414,9 @@ input {
 }
 
 .menu__item {
-  display: flex;
   align-items: center;
+  display: flex;
+  gap: 0.5rem;
 }
 
 .menu__item:hover {
@@ -432,6 +433,17 @@ input {
   height: 2rem;
   object-fit: cover;
   width: 2rem;
+}
+
+.menu__unread-message-count {
+  align-items: center;
+  background: #0b65c2;
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  height: 1.25rem;
+  justify-content: center;
+  width: 1.25rem;
 }
 
 .shown {
