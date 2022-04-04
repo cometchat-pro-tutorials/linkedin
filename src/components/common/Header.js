@@ -1,5 +1,5 @@
 import { useContext, useState, useEffect, useCallback } from "react";
-import { useHistory } from "react-router-dom";
+import { useHistory, useLocation } from "react-router-dom";
 
 import withModal from "../common/Modal";
 import Search from "../search/Search";
@@ -12,6 +12,13 @@ const Header = ({ toggleModal }) => {
   const { user, setUser, cometChat } = useContext(Context);
 
   const history = useHistory();
+  const location = useLocation();
+
+  const increaseUnreadMessageCount = useCallback(() => {
+    if (location.pathname !== '/chat') {
+      setUnreadMessageCount((prevCount) => prevCount + 1);
+    }
+  }, [location]);
 
   const addMessageListener = useCallback(() => {
     if (!user || !cometChat) return;
@@ -19,17 +26,17 @@ const Header = ({ toggleModal }) => {
       user.id,
       new cometChat.MessageListener({
         onTextMessageReceived: (textMessage) => {
-          setUnreadMessageCount((prevCount) => prevCount + 1);
+          increaseUnreadMessageCount();
         },
         onMediaMessageReceived: (mediaMessage) => {
-          setUnreadMessageCount((prevCount) => prevCount + 1);
+          increaseUnreadMessageCount();
         },
         onCustomMessageReceived: (customMessage) => {
-          setUnreadMessageCount((prevCount) => prevCount + 1);
+          increaseUnreadMessageCount();
         },
       })
     );
-  }, [user, cometChat]);
+  }, [user, cometChat, increaseUnreadMessageCount]);
 
   const transformUnreadMessageCount = useCallback((unreadMessageCount) => {
     const keys = Object.keys(unreadMessageCount);
